@@ -1,0 +1,135 @@
+# Synthèse du projet — Optimisation du ROI Marketing 🎯
+
+Ok donc voilà ce qu'on a à faire, j'vais te l'expliquer clairement.
+
+## Le contexte en deux mots
+
+On a un dataset marketing avec des campagnes pub (budgets TV, Radio, Social Media, type d'influenceur) et les ventes générées. L'idée c'est de construire un système intelligent qui aide un responsable marketing à décider où mettre son budget.
+
+---
+
+## Notre problématique : Impact Marginal d'un Canal
+
+On a choisi la question : **"Si j'augmente mon budget TV de X€, mes ventes augmentent de combien ?"**
+
+Concrètement, on entraîne un modèle de **régression** qui prédit les ventes en fonction des budgets :
+
+> Sales = f(TV, Radio, Social Media, Influencer)
+
+Ensuite, l'impact marginal se calcule comme la **dérivée partielle** — c'est-à-dire : si je fais varier TV de +1 (toutes choses égales par ailleurs), de combien Sales bouge ? C'est ça qu'on veut quantifier pour *chaque canal*.
+
+---
+
+## Ce qu'on doit produire concrètement
+
+### 1. Préparation des données (EDA)
+- Nettoyer le dataset (valeurs manquantes, outliers)
+- Encoder la variable catégorielle `Influencer` (Mega/Macro/Micro/Nano)
+- Normaliser si besoin
+- Analyser les corrélations entre budgets et ventes
+
+### 2. Entraîner **4 modèles minimum**
+Il en faut au moins un de Deep Learning. Un bon combo serait :
+- Régression Linéaire ← le baseline, très interprétable
+- Random Forest ← capture les non-linéarités
+- Gradient Boosting (XGBoost/LightGBM) ← souvent le plus performant
+- MLP (réseau de neurones) ← obligatoire, c'est le DL
+
+### 3. Comparer les modèles
+Métriques de régression : **MAE, RMSE, R²**. On fait un tableau comparatif et on justifie quel modèle on garde comme modèle final.
+
+### 4. Calculer l'impact marginal
+C'est la partie spécifique à notre problématique. Deux approches :
+- Sur les modèles linéaires → les coefficients *sont* directement l'impact marginal
+- Sur les modèles non-linéaires → on simule : on fait varier TV de +1M€ et on regarde la différence de prédiction
+
+### 5. Interprétabilité (important !)
+- Feature importance pour savoir quel canal pèse le plus
+- **SHAP** sur le modèle final → expliquer *pourquoi* telle combinaison budgétaire génère telles ventes
+
+### 6. Dashboard Streamlit (obligatoire)
+Une interface où un CMO peut :
+- Saisir des budgets (TV, Radio, Social Media, type d'influenceur)
+- Voir la prédiction de ventes
+- Voir l'impact marginal de chaque canal ("si j'augmente TV de 10%, ça fait +X ventes")
+- Comparer les modèles visuellement
+
+### 7. API REST (optionnel mais valorisant)
+Endpoints `/predict` et `/health` avec FastAPI.
+
+---
+
+## Structure du projet recommandée
+
+```
+projet/
+├── data/               ← le dataset
+├── notebooks/          ← EDA et expérimentations
+├── src/
+│   ├── preprocessing.py
+│   ├── modeling.py
+│   ├── evaluation.py
+│   └── marginal_impact.py  ← notre spécificité
+├── dashboard/          ← app Streamlit
+├── api/                ← FastAPI (optionnel)
+└── rapport/
+```
+
+---
+
+## Ce qui nous différencie des autres groupes
+
+Notre angle est intéressant parce qu'on ne prédit pas juste les ventes — on répond à une question *actionnable* : **quel canal donne le meilleur retour marginal ?** C'est exactement ce qu'un vrai CMO veut savoir pour arbitrer son budget. Il faut bien mettre ça en avant dans le rapport et le dashboard.
+
+---
+
+Tu veux qu'on commence par quelle partie ? L'EDA, le code des modèles, ou le dashboard ?
+
+
+
+
+
+
+
+Pourquoi ces 4 modèles ?
+Régression Linéaire — le baseline
+C'est le point de départ obligatoire. Avec r=0.9995 entre TV et Sales, une relation quasi-linéaire existe clairement. Si la linéaire performe déjà très bien, ça nous dira que la relation est simple. En plus ses coefficients sont directement l'impact marginal — parfait pour notre problématique.
+Random Forest — capturer la complexité
+La linéaire suppose que chaque canal agit indépendamment. Mais en vrai, est-ce qu'un budget TV élevé combiné à un influenceur Mega a un effet différent ? Le Random Forest capture ces interactions entre variables sans qu'on ait à les spécifier manuellement.
+XGBoost — challenger performant
+C'est le modèle qui gagne la plupart des compétitions sur des données tabulaires. Il corrige progressivement les erreurs des modèles précédents. On l'inclut pour voir s'il apporte un gain réel par rapport au Random Forest.
+MLP — obligatoire + justifié
+Avec 4572 lignes et des interactions potentiellement complexes entre canaux et type d'influenceur, un réseau de neurones peut capturer des patterns que les autres modèles ratent. C'est aussi obligatoire selon le sujet. On analysera si sa complexité est vraiment justifiée ou si un modèle plus simple suffit.
+
+
+
+
+
+
+Excellents résultats ! C'est très clair et très cohérent avec ce qu'on avait vu dans l'EDA. Voilà comment interpréter ça pour le rapport :
+
+---
+
+## Ce que ces résultats nous disent
+
+**TV domine massivement — impact moyen de 64.19 M€**
+C'est cohérent avec r=0.9995 qu'on avait trouvé en EDA. Chaque augmentation de budget TV a un impact direct et très fort sur les ventes. C'est le levier principal pour un CMO.
+
+**Radio est second mais loin derrière — 14.52 M€**
+Impact significatif mais 4x moins puissant que TV. Un budget Radio bien alloué reste utile mais ne compense pas un budget TV faible.
+
+**Social Media quasi négligeable — 0.84 M€**
+Résultat surprenant vu la tendance actuelle. Deux interprétations possibles pour le rapport : soit le dataset reflète un contexte où le digital est encore peu mature, soit TV et Radio capturent déjà l'essentiel de la variance et "écrasent" Social Media.
+
+**Le type d'influenceur a très peu d'impact — 0.14 à 0.21 M€**
+Mega, Micro, Macro, Nano contribuent tous de façon quasi identique et marginale. Le type d'influenceur n'est pas un levier décisif dans ce dataset — c'est le budget canal qui prime.
+
+---
+
+## Recommandation clé pour le rapport
+
+> *"Selon l'analyse SHAP, le budget TV est de loin le déterminant principal des ventes avec un impact marginal moyen de 64M€, soit 4x supérieur à Radio et 76x supérieur à Social Media. Le type d'influenceur ne joue qu'un rôle marginal. Un CMO cherchant à maximiser son ROI devrait donc prioriser l'allocation budgétaire TV avant tout autre canal."*
+
+---
+
+On attaque le dashboard maintenant ?

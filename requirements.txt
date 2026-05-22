@@ -1,0 +1,20 @@
+pandas
+numpy
+matplotlib
+seaborn
+scipy
+scikit-learn
+xgboost
+#tensorflow
+shap
+streamlit
+
+tensorflow-macos
+tensorflow-metal
+plotly
+streamlit
+#streamlit run dashboard.py
+statsmodels
+fastapi
+uvicorn
+#uvicorn api:app --reload
